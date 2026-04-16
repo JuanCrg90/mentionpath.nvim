@@ -13,6 +13,8 @@ Type `@controller` in a Markdown buffer, pick a project file from `nvim-cmp`, an
 - `.gitignore` respected by default through `fd`.
 - Fallback to `git ls-files --cached --others --exclude-standard` when `fd` is missing.
 - Token-aware matching for basenames, path segments, underscores, hyphens, and fuzzy subsequences.
+- Case-insensitive matching.
+- Leading slash tolerant matching, so `@/lua/` can match `lua/...`.
 
 ## Install
 
@@ -63,12 +65,48 @@ require("mentionpath").setup({
       ".",
     },
   },
+  debug = {
+    enabled = false,
+    log_path = nil,
+  },
 })
+```
+
+## Debugging
+
+Enable logs while testing:
+
+```lua
+require("mentionpath").setup({
+  debug = {
+    enabled = true,
+  },
+})
+```
+
+Log file:
+
+```vim
+:lua print(require("mentionpath.log").path())
+```
+
+Useful commands:
+
+```vim
+:MentionpathLog
+:MentionpathClearLog
+```
+
+From a terminal, tail the log while typing in Neovim:
+
+```sh
+tail -f "$(nvim --headless -u NONE -i NONE +'lua io.write(vim.fn.stdpath("state") .. "/mentionpath.log")' +qa)"
 ```
 
 ## Architecture
 
 - `mentionpath.config`: user options and defaults.
+- `mentionpath.log`: optional debug logging for manual testing.
 - `mentionpath.root`: project root detection, using `git rev-parse --show-toplevel` first.
 - `mentionpath.files`: async file collection and short-lived per-root cache.
 - `mentionpath.token`: active `@query` extraction from cursor context.
@@ -86,6 +124,7 @@ The cmp adapter is intentionally thin so Telescope or another backend can reuse 
 5. `mentionpath.files` returns a cached file list or runs `fd` from the root.
 6. `mentionpath.matcher` ranks relative paths.
 7. The cmp item uses `textEdit` to replace only the active token with `@relative/path`.
+8. Results are marked incomplete so cmp re-queries as the mention text changes.
 
 ## Notes
 

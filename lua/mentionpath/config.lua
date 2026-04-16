@@ -30,6 +30,10 @@ local defaults = {
     source_name = "mentionpath",
     auto_register = true,
   },
+  debug = {
+    enabled = false,
+    log_path = nil,
+  },
 }
 
 local options = vim.deepcopy(defaults)

@@ -60,7 +60,12 @@ local function token_prefix_score(query, path)
 end
 
 local function score(query, path)
-  local normalized_query = query:lower()
+  local normalized_query = query:lower():gsub("^/+", "")
+
+  if normalized_query == "" then
+    return nil
+  end
+
   local normalized_path = path:lower()
   local file = basename(normalized_path)
   local best = nil

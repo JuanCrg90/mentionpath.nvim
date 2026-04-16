@@ -40,4 +40,22 @@ local order_matches = matcher.match("order", {
 
 assert_equal("app/models/order.rb", order_matches[1].path)
 
+local controller_matches = matcher.match("contact_controller", {
+  "app/controllers/contact_controller.rb",
+}, { max_results = 10 })
+
+assert_equal("app/controllers/contact_controller.rb", controller_matches[1].path)
+
+local case_matches = matcher.match("Contact_Controller", {
+  "app/controllers/contact_controller.rb",
+}, { max_results = 10 })
+
+assert_equal("app/controllers/contact_controller.rb", case_matches[1].path)
+
+local slash_matches = matcher.match("/lua/", {
+  "lua/mentionpath/init.lua",
+}, { max_results = 10 })
+
+assert_equal("lua/mentionpath/init.lua", slash_matches[1].path)
+
 print("mentionpath minimal tests passed")

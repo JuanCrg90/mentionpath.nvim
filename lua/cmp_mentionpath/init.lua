@@ -1,5 +1,6 @@
 local config = require("mentionpath.config")
 local files = require("mentionpath.files")
+local log = require("mentionpath.log")
 local matcher = require("mentionpath.matcher")
 local root = require("mentionpath.root")
 local token = require("mentionpath.token")
@@ -18,8 +19,18 @@ function source:get_trigger_characters()
   return { config.get().trigger }
 end
 
+function source:get_keyword_pattern()
+  return [[@\%(\k\|[./-]\)*]]
+end
+
 function source:is_available()
-  return config.filetype_enabled(vim.bo.filetype)
+  local available = config.filetype_enabled(vim.bo.filetype)
+
+  if not available then
+    log.write("source unavailable", { filetype = vim.bo.filetype })
+  end
+
+  return available
 end
 
 local function cursor_line(cursor)
@@ -40,7 +51,7 @@ local function completion_item(path, item_index, active_token, line)
   return {
     label = path,
     insertText = inserted,
-    filterText = active_token.query,
+    filterText = inserted,
     sortText = string.format("%04d", item_index),
     kind = 17,
     textEdit = {
@@ -65,15 +76,38 @@ function source:complete(params, callback)
   local cursor_before_line = context.cursor_before_line or ""
   local active_token = token.extract(cursor_before_line, options)
 
-  if not active_token or #active_token.query < options.min_chars then
+  if not active_token then
+    log.write("complete skipped", {
+      cursor_before_line = cursor_before_line,
+      token = active_token,
+      min_chars = options.min_chars,
+      incomplete = false,
+    })
     callback({ items = {}, isIncomplete = false })
+    return
+  end
+
+  if #active_token.query < options.min_chars then
+    log.write("complete skipped", {
+      cursor_before_line = cursor_before_line,
+      token = active_token,
+      min_chars = options.min_chars,
+      incomplete = true,
+    })
+    callback({ items = {}, isIncomplete = true })
     return
   end
 
   local bufnr = context.bufnr or vim.api.nvim_get_current_buf()
   local project_root = root.detect(bufnr, options.root)
 
-  files.list(project_root, options.files, function(paths)
+  log.write("complete start", {
+    query = active_token.query,
+    root = project_root,
+    filetype = vim.bo[bufnr].filetype,
+  })
+
+  files.list(project_root, options.files, function(paths, err)
     local matches = matcher.match(active_token.query, paths, {
       max_results = options.max_results or options.matcher.max_results,
     })
@@ -84,9 +118,17 @@ function source:complete(params, callback)
       table.insert(items, completion_item(match.path, index, active_token, line))
     end
 
+    log.write("complete finish", {
+      query = active_token.query,
+      error = err,
+      file_count = #paths,
+      match_count = #matches,
+      first_match = matches[1] and matches[1].path or nil,
+    })
+
     callback({
       items = items,
-      isIncomplete = false,
+      isIncomplete = true,
     })
   end)
 end
