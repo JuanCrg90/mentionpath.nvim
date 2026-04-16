@@ -16,9 +16,9 @@ Type `@controller` in a Markdown buffer, pick a project file from `nvim-cmp`, an
 - Case-insensitive matching.
 - Leading slash tolerant matching, so `@/lua/` can match `lua/...`.
 
-## Install
+## Installation
 
-With lazy.nvim:
+### lazy.nvim
 
 ```lua
 {
@@ -41,6 +41,59 @@ With lazy.nvim:
 ```
 
 `mentionpath.nvim` registers the `mentionpath` cmp source automatically when `nvim-cmp` is available. You still need to add the source to your Markdown cmp configuration.
+
+### LazyVim
+
+LazyVim users can add a plugin spec that lets LazyVim merge the cmp source into the existing `nvim-cmp` setup:
+
+```lua
+return {
+  {
+    "JuanCrg90/mentionpath.nvim",
+    ft = "markdown",
+    dependencies = { "hrsh7th/nvim-cmp" },
+    opts = {},
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    opts = function(_, opts)
+      opts.sources = opts.sources or {}
+      table.insert(opts.sources, 1, { name = "mentionpath" })
+    end,
+  },
+}
+```
+
+The cmp source is added to the shared source list, but `mentionpath.nvim` still reports itself as unavailable outside Markdown buffers.
+
+### Local Development
+
+Use `dir` when working from a local checkout:
+
+```lua
+return {
+  {
+    "mentionpath.nvim",
+    dir = "/path/to/mentionpath.nvim",
+    ft = "markdown",
+    dependencies = { "hrsh7th/nvim-cmp" },
+    opts = {
+      debug = {
+        enabled = true,
+      },
+    },
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    opts = function(_, opts)
+      opts.sources = opts.sources or {}
+      table.insert(opts.sources, 1, { name = "mentionpath" })
+    end,
+  },
+}
+```
+
+`debug.enabled = true` is useful while testing the plugin locally. The public default is `false`.
 
 ## Configuration
 
