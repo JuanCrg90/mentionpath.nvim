@@ -1,4 +1,5 @@
 local matcher = require("mentionpath.matcher")
+local root = require("mentionpath.root")
 local token = require("mentionpath.token")
 
 local function assert_equal(expected, actual)
@@ -57,5 +58,20 @@ local slash_matches = matcher.match("/lua/", {
 }, { max_results = 10 })
 
 assert_equal("lua/mentionpath/init.lua", slash_matches[1].path)
+
+root.clear_cache()
+
+vim.o.swapfile = false
+vim.cmd.enew()
+
+local tmp_bufnr = vim.api.nvim_get_current_buf()
+local tmp_path = vim.fn.tempname() .. ".md"
+
+vim.fn.mkdir(vim.fn.fnamemodify(tmp_path, ":h"), "p")
+vim.api.nvim_buf_set_name(tmp_bufnr, tmp_path)
+
+local expected_root = (vim.uv or vim.loop).fs_realpath(vim.fn.getcwd()) or vim.fn.getcwd()
+
+assert_equal(expected_root, root.detect(tmp_bufnr, {}))
 
 print("mentionpath minimal tests passed")
