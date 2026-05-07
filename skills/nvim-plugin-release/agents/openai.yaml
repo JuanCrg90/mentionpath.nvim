@@ -1,0 +1,3 @@
+display_name: Neovim Plugin Release
+short_description: Bump plugin tags and changelog cleanly
+default_prompt: Update the changelog, choose the next SemVer tag, and prepare this Neovim plugin release.

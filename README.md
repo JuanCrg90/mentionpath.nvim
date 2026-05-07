@@ -67,6 +67,23 @@ return {
 
 The cmp source is added to the shared source list, but `mentionpath.nvim` still reports itself as unavailable outside Markdown buffers.
 
+## Versioning
+
+`mentionpath.nvim` uses Git tags as its release version source of truth.
+
+- Cut releases with SemVer tags such as `v0.1.0`.
+- Track pending user-visible changes in [CHANGELOG.md](CHANGELOG.md).
+- Push a `v*` tag to trigger GitHub Release creation.
+
+Example `lazy.nvim` pin:
+
+```lua
+{
+  "JuanCrg90/mentionpath.nvim",
+  version = "v0.1.0",
+}
+```
+
 ### Local Development
 
 Use `dir` when working from a local checkout:
