@@ -22,6 +22,10 @@ local function buffer_dir(bufnr)
   return dirname(name)
 end
 
+local function current_cwd()
+  return realpath(vim.fn.getcwd())
+end
+
 local function git_root(dir)
   local key = realpath(dir)
 
@@ -72,8 +76,23 @@ function M.detect(bufnr, opts)
   end
 
   local dir = buffer_dir(bufnr or 0)
+  local detected = git_root(dir) or find_marker_root(dir)
 
-  return git_root(dir) or find_marker_root(dir) or realpath(dir)
+  if detected then
+    return detected
+  end
+
+  local cwd = current_cwd()
+
+  if cwd ~= realpath(dir) then
+    detected = git_root(cwd) or find_marker_root(cwd)
+
+    if detected then
+      return detected
+    end
+  end
+
+  return realpath(dir)
 end
 
 function M.clear_cache()

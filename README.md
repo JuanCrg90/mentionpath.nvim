@@ -12,6 +12,7 @@ Type `@controller` in a Markdown buffer, pick a project file from `nvim-cmp`, an
 - Project file discovery through `fd` when available.
 - `.gitignore` respected by default through `fd`.
 - Fallback to `git ls-files --cached --others --exclude-standard` when `fd` is missing.
+- Temp prompt buffers still resolve against the current project when Neovim `cwd` is inside the repo.
 - Token-aware matching for basenames, path segments, underscores, hyphens, and fuzzy subsequences.
 - Case-insensitive matching.
 - Leading slash tolerant matching, so `@/lua/` can match `lua/...`.
@@ -161,6 +162,7 @@ tail -f "$(nvim --headless -u NONE -i NONE +'lua io.write(vim.fn.stdpath("state"
 - `mentionpath.config`: user options and defaults.
 - `mentionpath.log`: optional debug logging for manual testing.
 - `mentionpath.root`: project root detection, using `git rev-parse --show-toplevel` first.
+  If the active buffer lives in a temp directory, it falls back to the current Neovim `cwd` project root before using the temp path itself.
 - `mentionpath.files`: async file collection and short-lived per-root cache.
 - `mentionpath.token`: active `@query` extraction from cursor context.
 - `mentionpath.matcher`: simple ranking against basenames and relative paths.
