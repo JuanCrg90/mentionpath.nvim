@@ -2,7 +2,7 @@ local M = {}
 
 local defaults = {
   trigger = "@",
-  filetypes = { "markdown" },
+  filetypes = { "markdown", "text" },
   min_chars = 1,
   max_results = 50,
   ui = {
