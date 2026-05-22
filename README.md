@@ -6,7 +6,7 @@ Type `@controller` in a Markdown buffer, pick a project file from `blink.cmp` or
 
 ## MVP
 
-- Markdown-only completion source.
+- Markdown and text file completion source.
 - `@` trigger.
 - Continuous no-space query tokens.
 - Project file discovery through `fd` when available.
@@ -25,7 +25,7 @@ Type `@controller` in a Markdown buffer, pick a project file from `blink.cmp` or
 return {
   {
     "JuanCrg90/mentionpath.nvim",
-    ft = "markdown",
+    ft = { "markdown", "text" },
     dependencies = { "saghen/blink.cmp" },
     opts = {
       ui = {
@@ -55,7 +55,7 @@ return {
 return {
   {
     "JuanCrg90/mentionpath.nvim",
-    ft = "markdown",
+    ft = { "markdown", "text" },
     dependencies = { "hrsh7th/nvim-cmp" },
     opts = {
       ui = {
@@ -73,7 +73,7 @@ return {
 }
 ```
 
-`mentionpath.nvim` registers the `mentionpath` cmp source automatically when `nvim-cmp` is available and `ui.backend` is not `"blink"`. You still need to add the source to your Markdown cmp configuration.
+`mentionpath.nvim` registers the `mentionpath` cmp source automatically when `nvim-cmp` is available and `ui.backend` is not `"blink"`. You still need to add the source to your Markdown and text cmp configuration.
 
 ### LazyVim
 
@@ -83,7 +83,7 @@ LazyVim uses `blink.cmp` by default. Add the native source provider and prepend 
 return {
   {
     "JuanCrg90/mentionpath.nvim",
-    ft = "markdown",
+    ft = { "markdown", "text" },
     dependencies = { "saghen/blink.cmp" },
     opts = {
       ui = {
@@ -111,7 +111,7 @@ For a LazyVim setup that still uses `nvim-cmp`, merge the cmp source into the ex
 return {
   {
     "JuanCrg90/mentionpath.nvim",
-    ft = "markdown",
+    ft = { "markdown", "text" },
     dependencies = { "hrsh7th/nvim-cmp" },
     opts = {},
   },
@@ -125,7 +125,7 @@ return {
 }
 ```
 
-The cmp source is added to the shared source list, but `mentionpath.nvim` still reports itself as unavailable outside Markdown buffers.
+The cmp source is added to the shared source list, but `mentionpath.nvim` still reports itself as unavailable outside Markdown and text buffers.
 
 ## Versioning
 
@@ -153,7 +153,7 @@ return {
   {
     "mentionpath.nvim",
     dir = "/path/to/mentionpath.nvim",
-    ft = "markdown",
+    ft = { "markdown", "text" },
     dependencies = { "hrsh7th/nvim-cmp" },
     opts = {
       debug = {
@@ -252,7 +252,7 @@ The completion adapters are intentionally thin so another backend can reuse the 
 ## Implementation Flow
 
 1. `nvim-cmp` asks the source for completions after `@` or while typing.
-2. The source exits unless the current buffer filetype is `markdown`.
+2. The source exits unless the current buffer filetype is `markdown` or `text`.
 3. `mentionpath.token` extracts the active no-space `@query` before the cursor.
 4. `mentionpath.root` finds the project root.
 5. `mentionpath.files` returns a cached file list or runs `fd` from the root.

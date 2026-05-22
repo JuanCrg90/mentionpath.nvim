@@ -1,7 +1,8 @@
-vim.bo.filetype = "markdown"
-
+vim.bo.filetype = "text"
 local source = require("cmp_mentionpath").new()
+assert(source:is_available(), "source should be available in text files")
 
+vim.bo.filetype = "markdown"
 assert(source:is_available(), "source should be available in Markdown")
 assert(source:get_keyword_pattern():match("^@"), "keyword pattern should include the trigger")
 
