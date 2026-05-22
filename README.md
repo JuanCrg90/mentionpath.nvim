@@ -2,7 +2,7 @@
 
 Inline project-file mentions for Markdown prompt writing.
 
-Type `@controller` in a Markdown buffer, pick a project file from `nvim-cmp`, and insert `@app/controllers/orders_controller.rb`.
+Type `@controller` in a Markdown buffer, pick a project file from `blink.cmp` or `nvim-cmp`, and insert `@app/controllers/orders_controller.rb`.
 
 ## MVP
 
@@ -19,33 +19,93 @@ Type `@controller` in a Markdown buffer, pick a project file from `nvim-cmp`, an
 
 ## Installation
 
-### lazy.nvim
+### lazy.nvim with blink.cmp
 
 ```lua
-{
-  "JuanCrg90/mentionpath.nvim",
-  dependencies = { "hrsh7th/nvim-cmp" },
-  config = function()
-    require("mentionpath").setup()
+return {
+  {
+    "JuanCrg90/mentionpath.nvim",
+    ft = "markdown",
+    dependencies = { "saghen/blink.cmp" },
+    opts = {
+      ui = {
+        backend = "blink",
+      },
+    },
+  },
+  {
+    "saghen/blink.cmp",
+    opts = function(_, opts)
+      opts.sources = opts.sources or {}
+      opts.sources.default = opts.sources.default or { "lsp", "path", "snippets", "buffer" }
+      table.insert(opts.sources.default, 1, "mentionpath")
 
-    local cmp = require("cmp")
-
-    cmp.setup.filetype("markdown", {
-      sources = cmp.config.sources({
-        { name = "mentionpath" },
-      }, {
-        { name = "buffer" },
-      }),
-    })
-  end,
+      opts.sources.providers = opts.sources.providers or {}
+      opts.sources.providers.mentionpath = require("mentionpath").blink_provider()
+    end,
+  },
 }
 ```
 
-`mentionpath.nvim` registers the `mentionpath` cmp source automatically when `nvim-cmp` is available. You still need to add the source to your Markdown cmp configuration.
+`mentionpath.nvim` exposes a native blink source through `require("mentionpath").blink_provider()`. Add it to `sources.providers` and include `"mentionpath"` in `sources.default`.
+
+### lazy.nvim with nvim-cmp
+
+```lua
+return {
+  {
+    "JuanCrg90/mentionpath.nvim",
+    ft = "markdown",
+    dependencies = { "hrsh7th/nvim-cmp" },
+    opts = {
+      ui = {
+        backend = "cmp",
+      },
+    },
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    opts = function(_, opts)
+      opts.sources = opts.sources or {}
+      table.insert(opts.sources, 1, { name = "mentionpath" })
+    end,
+  },
+}
+```
+
+`mentionpath.nvim` registers the `mentionpath` cmp source automatically when `nvim-cmp` is available and `ui.backend` is not `"blink"`. You still need to add the source to your Markdown cmp configuration.
 
 ### LazyVim
 
-LazyVim users can add a plugin spec that lets LazyVim merge the cmp source into the existing `nvim-cmp` setup:
+LazyVim uses `blink.cmp` by default. Add the native source provider and prepend it to the default source list:
+
+```lua
+return {
+  {
+    "JuanCrg90/mentionpath.nvim",
+    ft = "markdown",
+    dependencies = { "saghen/blink.cmp" },
+    opts = {
+      ui = {
+        backend = "blink",
+      },
+    },
+  },
+  {
+    "saghen/blink.cmp",
+    opts = function(_, opts)
+      opts.sources = opts.sources or {}
+      opts.sources.default = opts.sources.default or { "lsp", "path", "snippets", "buffer" }
+      table.insert(opts.sources.default, 1, "mentionpath")
+
+      opts.sources.providers = opts.sources.providers or {}
+      opts.sources.providers.mentionpath = require("mentionpath").blink_provider()
+    end,
+  },
+}
+```
+
+For a LazyVim setup that still uses `nvim-cmp`, merge the cmp source into the existing setup:
 
 ```lua
 return {
@@ -120,7 +180,7 @@ require("mentionpath").setup({
   min_chars = 1,
   max_results = 50,
   ui = {
-    backend = "cmp",
+    backend = "auto",
   },
   root = {
     detector = nil,
@@ -183,9 +243,11 @@ tail -f "$(nvim --headless -u NONE -i NONE +'lua io.write(vim.fn.stdpath("state"
 - `mentionpath.files`: async file collection and short-lived per-root cache.
 - `mentionpath.token`: active `@query` extraction from cursor context.
 - `mentionpath.matcher`: simple ranking against basenames and relative paths.
+- `mentionpath.source`: shared completion engine.
+- `mentionpath.blink`: native `blink.cmp` source adapter.
 - `cmp_mentionpath`: `nvim-cmp` source adapter.
 
-The cmp adapter is intentionally thin so Telescope or another backend can reuse the same root, file, token, and matcher modules later.
+The completion adapters are intentionally thin so another backend can reuse the same root, file, token, and matcher modules later.
 
 ## Implementation Flow
 

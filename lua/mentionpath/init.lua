@@ -21,9 +21,18 @@ function M.setup(opts)
   local options = config.get()
   log.write("setup", options)
 
-  if options.cmp.auto_register then
+  if options.ui.backend ~= "blink" and options.cmp.auto_register then
     M.register_cmp_source()
   end
+end
+
+function M.blink_provider()
+  local options = config.get()
+
+  return {
+    name = options.blink.source_name,
+    module = "mentionpath.blink",
+  }
 end
 
 function M.register_cmp_source()
@@ -45,7 +54,14 @@ function M.register_cmp_source()
     return
   end
 
-  cmp.register_source(config.get().cmp.source_name, source.new())
+  local options = config.get()
+
+  if options.ui.backend == "blink" then
+    log.write("register_cmp_source skipped", "blink backend configured")
+    return
+  end
+
+  cmp.register_source(options.cmp.source_name, source.new())
   vim.g.mentionpath_cmp_registered = true
   log.write("register_cmp_source", "registered")
 end

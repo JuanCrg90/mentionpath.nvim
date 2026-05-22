@@ -6,7 +6,7 @@ local defaults = {
   min_chars = 1,
   max_results = 50,
   ui = {
-    backend = "cmp",
+    backend = "auto",
   },
   root = {
     detector = nil,
@@ -29,6 +29,9 @@ local defaults = {
   cmp = {
     source_name = "mentionpath",
     auto_register = true,
+  },
+  blink = {
+    source_name = "mentionpath",
   },
   debug = {
     enabled = false,
