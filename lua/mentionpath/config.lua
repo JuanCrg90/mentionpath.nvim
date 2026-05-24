@@ -12,6 +12,7 @@ local defaults = {
     detector = nil,
   },
   files = {
+    enabled = true,
     cache_ttl_ms = 5000,
     command = nil,
     fd_args = {
@@ -22,6 +23,13 @@ local defaults = {
       "never",
       ".",
     },
+  },
+  skills = {
+    enabled = true,
+    trigger = "$",
+    directory = ".agents/skills",
+    marker_file = "SKILL.md",
+    cache_ttl_ms = 5000,
   },
   matcher = {
     max_results = 50,

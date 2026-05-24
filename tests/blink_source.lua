@@ -3,7 +3,9 @@ vim.bo.filetype = "markdown"
 local source = require("mentionpath.blink").new()
 
 assert(source:enabled(), "source should be available in Markdown")
-assert(vim.deep_equal(source:get_trigger_characters(), { "@" }), "expected @ trigger")
+local triggers = source:get_trigger_characters()
+assert(vim.tbl_contains(triggers, "@"), "expected @ trigger")
+assert(vim.tbl_contains(triggers, "$"), "expected $ trigger for skills")
 
 source:get_completions({
   bufnr = vim.api.nvim_get_current_buf(),

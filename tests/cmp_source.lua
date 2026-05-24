@@ -4,7 +4,26 @@ assert(source:is_available(), "source should be available in text files")
 
 vim.bo.filetype = "markdown"
 assert(source:is_available(), "source should be available in Markdown")
-assert(source:get_keyword_pattern():match("^@"), "keyword pattern should include the trigger")
+local pattern = source:get_keyword_pattern()
+assert(pattern:find("@", 1, true), "keyword pattern should include @ trigger")
+
+local config = require("mentionpath.config")
+local mention_source = require("mentionpath.source")
+
+config.setup({ skills = { enabled = false } })
+local disabled_triggers = mention_source.trigger_characters()
+assert(vim.tbl_contains(disabled_triggers, "@"), "expected @ trigger when files are enabled")
+assert(not vim.tbl_contains(disabled_triggers, "$"), "expected disabled skill trigger to be omitted")
+assert(not mention_source.keyword_pattern():find("$", 1, true), "keyword pattern should omit disabled skill trigger")
+
+config.setup({ trigger = "!", skills = { trigger = "#" } })
+local custom_triggers = mention_source.trigger_characters()
+assert(vim.tbl_contains(custom_triggers, "!"), "expected custom file trigger")
+assert(vim.tbl_contains(custom_triggers, "#"), "expected custom skill trigger")
+assert(mention_source.keyword_pattern():find("!", 1, true), "keyword pattern should include custom file trigger")
+assert(mention_source.keyword_pattern():find("#", 1, true), "keyword pattern should include custom skill trigger")
+
+config.setup()
 
 source:complete({
   context = {
