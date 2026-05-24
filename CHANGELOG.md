@@ -10,17 +10,20 @@ Versioning:
 
 ## [Unreleased]
 
+## [v0.2.0] - 2026-05-24
+
+This release introduces project path mentions and skill mentions for completion
+sources that support Markdown and text workflows.
+
 ### Added
-- Initial Markdown `@path` completion source for project files.
-- LazyVim setup documentation.
-- `$trigger` for discovering and completing skills found in `.agents/skills/` directories.
-- Skills are subdirectories containing a `SKILL.md` marker file.
-- `skills.enabled` config option to enable/disable skill completion.
-- `skills.trigger` config option (default `$`) to customize the trigger character.
-- `skills.directory` config option (default `.agents/skills`) to customize the skills directory.
-- `skills.marker_file` config option (default `SKILL.md`) to customize the marker file name.
+- Project file completion with `@path` mentions in Markdown and text buffers.
+- `nvim-cmp` and `blink.cmp` source integrations for mention completions.
+- Skill completion with `$trigger` for skills discovered in `.agents/skills/`.
+- Skill discovery from subdirectories that contain a `SKILL.md` marker file.
+- Skill completion configuration for enabling/disabling skills, changing the
+  trigger, and customizing the skills directory or marker file.
+- LazyVim setup documentation and release/versioning guidance.
 
 ### Fixed
 - Keep mention completions active while typing.
 - Resolve temp prompt buffers against the current project when the active buffer lives outside the repo.
-

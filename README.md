@@ -144,7 +144,7 @@ Example `lazy.nvim` pin:
 ```lua
 {
   "JuanCrg90/mentionpath.nvim",
-  version = "v0.1.0",
+  version = "v0.2.0",
 }
 ```
 
