@@ -4,10 +4,13 @@ Inline project-file mentions for Markdown prompt writing.
 
 Type `@controller` in a Markdown buffer, pick a project file from `blink.cmp` or `nvim-cmp`, and insert `@app/controllers/orders_controller.rb`.
 
+Type `$rails` in a Markdown buffer, pick a registered skill from `.agents/skills/`, and insert `$rails-simplifier`.
+
 ## MVP
 
 - Markdown and text file completion source.
-- `@` trigger.
+- `@` trigger for project files.
+- `$` trigger for agent skills.
 - Continuous no-space query tokens.
 - Project file discovery through `fd` when available.
 - `.gitignore` respected by default through `fd`.
@@ -16,6 +19,7 @@ Type `@controller` in a Markdown buffer, pick a project file from `blink.cmp` or
 - Token-aware matching for basenames, path segments, underscores, hyphens, and fuzzy subsequences.
 - Case-insensitive matching.
 - Leading slash tolerant matching, so `@/lua/` can match `lua/...`.
+- Skill discovery from `.agents/skills/` directories containing `SKILL.md` marker files.
 
 ## Installation
 
@@ -186,6 +190,7 @@ require("mentionpath").setup({
     detector = nil,
   },
   files = {
+    enabled = true,
     cache_ttl_ms = 5000,
     fd_args = {
       "--type",
@@ -196,12 +201,33 @@ require("mentionpath").setup({
       ".",
     },
   },
+  skills = {
+    enabled = true,
+    trigger = "$",
+    directory = ".agents/skills",
+    marker_file = "SKILL.md",
+    cache_ttl_ms = 5000,
+  },
   debug = {
     enabled = false,
     log_path = nil,
   },
 })
 ```
+
+### Skills Configuration
+
+The `skills` table controls skill discovery and completion:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `true` | Enable/disable skill completion |
+| `trigger` | `"$"` | Character that triggers skill completion |
+| `directory` | `".agents/skills"` | Subdirectory relative to project root where skills live |
+| `marker_file` | `"SKILL.md"` | File that marks a skill directory as valid |
+| `cache_ttl_ms` | `5000` | How long to cache discovered skills (ms) |
+
+Skills are directories under `<project-root>/.agents/skills/<skill-name>/` that contain a `SKILL.md` marker file. When you type `$rails`, the plugin will find and suggest matching skills like `$rails-simplifier`.
 
 ## Debugging
 
@@ -241,15 +267,18 @@ tail -f "$(nvim --headless -u NONE -i NONE +'lua io.write(vim.fn.stdpath("state"
 - `mentionpath.root`: project root detection, using `git rev-parse --show-toplevel` first.
   If the active buffer lives in a temp directory, it falls back to the current Neovim `cwd` project root before using the temp path itself.
 - `mentionpath.files`: async file collection and short-lived per-root cache.
-- `mentionpath.token`: active `@query` extraction from cursor context.
+- `mentionpath.skills`: skill discovery from `.agents/skills/` directories.
+- `mentionpath.token`: active trigger extraction (`@query` for files, `$query` for skills) from cursor context.
 - `mentionpath.matcher`: simple ranking against basenames and relative paths.
-- `mentionpath.source`: shared completion engine.
+- `mentionpath.source`: shared completion engine, routes to files or skills based on trigger type.
 - `mentionpath.blink`: native `blink.cmp` source adapter.
 - `cmp_mentionpath`: `nvim-cmp` source adapter.
 
 The completion adapters are intentionally thin so another backend can reuse the same root, file, token, and matcher modules later.
 
 ## Implementation Flow
+
+**File completion (via `@`):**
 
 1. `nvim-cmp` asks the source for completions after `@` or while typing.
 2. The source exits unless the current buffer filetype is `markdown` or `text`.
@@ -258,6 +287,17 @@ The completion adapters are intentionally thin so another backend can reuse the 
 5. `mentionpath.files` returns a cached file list or runs `fd` from the root.
 6. `mentionpath.matcher` ranks relative paths.
 7. The cmp item uses `textEdit` to replace only the active token with `@relative/path`.
+8. Results are marked incomplete so cmp re-queries as the mention text changes.
+
+**Skill completion (via `$`):**
+
+1. `nvim-cmp` asks the source for completions after `$` or while typing.
+2. The source exits unless the current buffer filetype is `markdown` or `text`.
+3. `mentionpath.token` extracts the active no-space `$query` before the cursor.
+4. `mentionpath.root` finds the project root.
+5. `mentionpath.skills` scans `.agents/skills/` for subdirectories containing `SKILL.md`.
+6. `mentionpath.matcher` ranks skill names.
+7. The cmp item uses `textEdit` to replace only the active token with `$skill-name`.
 8. Results are marked incomplete so cmp re-queries as the mention text changes.
 
 ## Notes

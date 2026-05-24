@@ -3,16 +3,39 @@ local files = require("mentionpath.files")
 local log = require("mentionpath.log")
 local matcher = require("mentionpath.matcher")
 local root = require("mentionpath.root")
+local skills = require("mentionpath.skills")
 local token = require("mentionpath.token")
 
 local M = {}
 
 function M.trigger_characters()
-  return { config.get().trigger }
+  local options = config.get()
+  local triggers = {}
+
+  if options.files.enabled then
+    table.insert(triggers, options.trigger)
+  end
+
+  if options.skills.enabled then
+    table.insert(triggers, options.skills.trigger)
+  end
+
+  return triggers
 end
 
 function M.keyword_pattern()
-  return [[@\%(\k\|[./-]\)*]]
+  local triggers = M.trigger_characters()
+  local escaped_triggers = {}
+
+  for _, trigger in ipairs(triggers) do
+    table.insert(escaped_triggers, vim.fn.escape(trigger, "\\^$.*~[]"))
+  end
+
+  if #escaped_triggers == 0 then
+    return [[\%(\k\)*]]
+  end
+
+  return [[\%(]] .. table.concat(escaped_triggers, [[\|]]) .. [[\)\%(\k\|[./-]\)*]]
 end
 
 function M.available(bufnr)
@@ -42,8 +65,8 @@ local function cursor_line(cursor)
   return vim.api.nvim_win_get_cursor(0)[1] - 1
 end
 
-local function completion_item(path, item_index, active_token, line)
-  local inserted = "@" .. path
+local function file_completion_item(path, item_index, active_token, line)
+  local inserted = active_token.trigger .. path
 
   return {
     label = path,
@@ -67,10 +90,41 @@ local function completion_item(path, item_index, active_token, line)
   }
 end
 
+local function skill_completion_item(skill_name, item_index, active_token, line)
+  local inserted = active_token.trigger .. skill_name
+
+  return {
+    label = skill_name,
+    insertText = inserted,
+    filterText = inserted,
+    sortText = string.format("%04d", item_index),
+    kind = 28,
+    textEdit = {
+      newText = inserted,
+      range = {
+        start = {
+          line = line,
+          character = active_token.start_col - 1,
+        },
+        ["end"] = {
+          line = line,
+          character = active_token.end_col - 1,
+        },
+      },
+    },
+  }
+end
+
 function M.complete(request, callback)
   local options = config.get()
   local cursor_before_line = request.cursor_before_line or ""
-  local active_token = token.extract(cursor_before_line, options)
+
+  local triggers = {
+    file_trigger = options.files.enabled and options.trigger or false,
+    skill_trigger = options.skills.enabled and options.skills.trigger or false,
+  }
+
+  local active_token = token.extract(cursor_before_line, triggers)
 
   if not active_token then
     log.write("complete skipped", {
@@ -96,37 +150,71 @@ function M.complete(request, callback)
 
   local bufnr = request.bufnr or vim.api.nvim_get_current_buf()
   local project_root = root.detect(bufnr, options.root)
+  local line = cursor_line(request.cursor)
 
   log.write("complete start", {
     query = active_token.query,
     root = project_root,
     filetype = vim.bo[bufnr].filetype,
+    token_kind = active_token.kind,
   })
 
-  files.list(project_root, options.files, function(paths, err)
-    local matches = matcher.match(active_token.query, paths, {
-      max_results = options.max_results or options.matcher.max_results,
-    })
-    local items = {}
-    local line = cursor_line(request.cursor)
+  if active_token.kind == "skill" and options.skills.enabled then
+    -- Route to skills discovery
+    skills.list(project_root, options.skills, function(skill_names, err)
+      local matches = matcher.match(active_token.query, skill_names, {
+        max_results = options.max_results or options.matcher.max_results,
+      })
+      local items = {}
 
-    for index, match in ipairs(matches) do
-      table.insert(items, completion_item(match.path, index, active_token, line))
+      for index, match in ipairs(matches) do
+        table.insert(items, skill_completion_item(match.path, index, active_token, line))
+      end
+
+      log.write("complete finish (skills)", {
+        query = active_token.query,
+        error = err,
+        skill_count = #skill_names,
+        match_count = #matches,
+        first_match = matches[1] and matches[1].path or nil,
+      })
+
+      callback({
+        items = items,
+        incomplete = true,
+      })
+    end)
+  else
+    -- Route to files discovery (existing behavior)
+    if not options.files.enabled then
+      callback({ items = {}, incomplete = false })
+      return
     end
 
-    log.write("complete finish", {
-      query = active_token.query,
-      error = err,
-      file_count = #paths,
-      match_count = #matches,
-      first_match = matches[1] and matches[1].path or nil,
-    })
+    files.list(project_root, options.files, function(paths, err)
+      local matches = matcher.match(active_token.query, paths, {
+        max_results = options.max_results or options.matcher.max_results,
+      })
+      local items = {}
 
-    callback({
-      items = items,
-      incomplete = true,
-    })
-  end)
+      for index, match in ipairs(matches) do
+        table.insert(items, file_completion_item(match.path, index, active_token, line))
+      end
+
+      log.write("complete finish (files)", {
+        query = active_token.query,
+        error = err,
+        file_count = #paths,
+        match_count = #matches,
+        first_match = matches[1] and matches[1].path or nil,
+      })
+
+      callback({
+        items = items,
+        incomplete = true,
+      })
+    end)
+  end
 end
 
 return M

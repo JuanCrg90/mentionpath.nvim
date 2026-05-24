@@ -13,6 +13,12 @@ Versioning:
 ### Added
 - Initial Markdown `@path` completion source for project files.
 - LazyVim setup documentation.
+- `$trigger` for discovering and completing skills found in `.agents/skills/` directories.
+- Skills are subdirectories containing a `SKILL.md` marker file.
+- `skills.enabled` config option to enable/disable skill completion.
+- `skills.trigger` config option (default `$`) to customize the trigger character.
+- `skills.directory` config option (default `.agents/skills`) to customize the skills directory.
+- `skills.marker_file` config option (default `SKILL.md`) to customize the marker file name.
 
 ### Fixed
 - Keep mention completions active while typing.

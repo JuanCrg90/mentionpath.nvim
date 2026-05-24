@@ -10,10 +10,39 @@ local function is_boundary(char)
   return char == "" or not is_valid_char(char)
 end
 
-function M.extract(cursor_before_line, opts)
-  opts = opts or {}
+function M.extract(cursor_before_line, triggers)
+  triggers = triggers or {}
 
-  local trigger = opts.trigger or "@"
+  local file_trigger = triggers.file_trigger
+  if file_trigger == nil then
+    file_trigger = triggers.trigger or "@"
+  end
+
+  local skill_trigger = triggers.skill_trigger
+  if skill_trigger == nil and triggers.file_trigger == nil and triggers.trigger == nil then
+    skill_trigger = "$"
+  end
+
+  if file_trigger then
+    local file_token = M._extract_for_trigger(cursor_before_line, file_trigger)
+    if file_token then
+      file_token.kind = "file"
+      return file_token
+    end
+  end
+
+  if skill_trigger then
+    local skill_token = M._extract_for_trigger(cursor_before_line, skill_trigger)
+    if skill_token then
+      skill_token.kind = "skill"
+      return skill_token
+    end
+  end
+
+  return nil
+end
+
+function M._extract_for_trigger(cursor_before_line, trigger)
   local index = #cursor_before_line
 
   while index > 0 and is_valid_char(cursor_before_line:sub(index, index)) do
@@ -34,6 +63,7 @@ function M.extract(cursor_before_line, opts)
     start_col = index,
     end_col = #cursor_before_line + 1,
     query = query,
+    trigger = trigger,
     token = trigger .. query,
   }
 end

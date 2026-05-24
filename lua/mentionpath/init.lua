@@ -68,6 +68,7 @@ end
 
 function M.clear_cache()
   require("mentionpath.files").clear_cache()
+  require("mentionpath.skills").clear_cache()
   require("mentionpath.root").clear_cache()
   log.write("clear_cache")
 end
